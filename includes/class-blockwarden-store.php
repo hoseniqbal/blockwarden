@@ -72,6 +72,15 @@ class BlockWarden_Store {
 			),
 			array( '%s', '%s', '%s', '%s', '%s' )
 		);
+		if ( 'blocked' === $event ) {
+			/**
+			 * A request was stopped.
+			 *
+			 * @param string $reason Reason.
+			 * @param string $form   register, login or lost.
+			 */
+			do_action( 'blockwarden_blocked', $reason, $form );
+		}
 	}
 
 	/**
