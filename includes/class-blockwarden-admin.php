@@ -47,11 +47,15 @@ class BlockWarden_Admin {
 	 * @return array
 	 */
 	private static function tabs() {
-		return array(
+		$tabs = array(
 			'overview' => __( 'Overview', 'blockwarden' ),
 			'settings' => __( 'Settings', 'blockwarden' ),
 			'cleanup'  => __( 'Account cleanup', 'blockwarden' ),
 		);
+		if ( ! class_exists( 'BWP_Plugin' ) ) {
+			$tabs['pro'] = __( 'Pro', 'blockwarden' );
+		}
+		return $tabs;
 	}
 
 	/**
@@ -88,7 +92,7 @@ class BlockWarden_Admin {
 		add_menu_page( __( 'BlockWarden', 'blockwarden' ), __( 'BlockWarden', 'blockwarden' ), self::CAP, self::PAGE, array( __CLASS__, 'render' ), $icon, 57 );
 		add_submenu_page( self::PAGE, __( 'Overview', 'blockwarden' ), __( 'Overview', 'blockwarden' ), self::CAP, self::PAGE, array( __CLASS__, 'render' ) );
 		$tabs = self::tabs();
-		foreach ( array( 'settings', 'cleanup' ) as $tab ) {
+		foreach ( array_intersect( array_keys( self::tabs() ), array( 'settings', 'cleanup', 'pro' ) ) as $tab ) {
 			add_submenu_page( self::PAGE, $tabs[ $tab ], $tabs[ $tab ], self::CAP, 'admin.php?page=' . self::PAGE . '&tab=' . $tab );
 		}
 	}
@@ -220,7 +224,7 @@ class BlockWarden_Admin {
 				</div>
 				<nav class="blockwarden-tabs" aria-label="<?php esc_attr_e( 'BlockWarden sections', 'blockwarden' ); ?>">
 					<?php foreach ( self::tabs() as $key => $label ) : ?>
-						<a href="<?php echo esc_url( self::url( $key ) ); ?>"<?php echo $key === $tab ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+						<a href="<?php echo esc_url( self::url( $key ) ); ?>"<?php echo 'pro' === $key ? ' class="ow-tab-pro"' : ''; ?><?php echo $key === $tab ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
 					<?php endforeach; ?>
 				</nav>
 			</div>
@@ -230,6 +234,8 @@ class BlockWarden_Admin {
 				self::render_settings();
 			} elseif ( 'cleanup' === $tab ) {
 				self::render_cleanup();
+			} elseif ( 'pro' === $tab ) {
+				self::render_pro();
 			} else {
 				self::render_overview();
 			}
@@ -676,5 +682,48 @@ class BlockWarden_Admin {
 		}
 		wp_safe_redirect( self::url( 'cleanup', array( 'bw_msg' => $msg ) ) );
 		exit;
+	}
+	/**
+	 * Pro page: what the add-on adds. Shows "Coming soon" until a store link is set.
+	 *
+	 * @return void
+	 */
+	private static function render_pro() {
+		$points = array(
+			__( 'Emailed login codes for administrators and shop managers', 'blockwarden' ),
+			__( 'Trusted browsers are not asked again for the days you choose', 'blockwarden' ),
+			__( 'Allow or block new accounts by country', 'blockwarden' ),
+			__( 'Attack alerts on Slack, Discord, Telegram or any webhook', 'blockwarden' ),
+			__( 'Weekly security report by email', 'blockwarden' ),
+		);
+		/**
+		 * Where to buy BlockWarden Pro. Empty shows "Coming soon".
+		 *
+		 * @param string $url URL.
+		 */
+		$buy = (string) apply_filters( 'blockwarden_pro_url', '' );
+		?>
+		<section class="ow-sale">
+			<div class="ow-sale-main">
+				<h2><?php esc_html_e( 'BlockWarden Pro', 'blockwarden' ); ?></h2>
+				<p><?php esc_html_e( 'A second lock for your staff accounts and a say in who can sign up.', 'blockwarden' ); ?></p>
+				<ul class="ow-points">
+					<?php foreach ( $points as $point ) : ?>
+						<li><?php echo esc_html( $point ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+			<div class="ow-sale-aside">
+				<span class="ow-pro-badge"><?php esc_html_e( 'Pro', 'blockwarden' ); ?></span>
+				<h3 style="margin-top:14px"><?php esc_html_e( 'A separate add-on', 'blockwarden' ); ?></h3>
+				<p><?php esc_html_e( 'Everything you use today stays free, with no limits. Pro adds the features on the left.', 'blockwarden' ); ?></p>
+				<?php if ( '' === $buy ) : ?>
+					<p><strong><?php esc_html_e( 'Coming soon.', 'blockwarden' ); ?></strong></p>
+				<?php else : ?>
+					<a class="button ow-btn-gold" href="<?php echo esc_url( $buy ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'See plans', 'blockwarden' ); ?></a>
+				<?php endif; ?>
+			</div>
+		</section>
+		<?php
 	}
 }
